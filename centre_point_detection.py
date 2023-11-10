@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Read the image
-image = cv2.imread('/home/matthewcockayne/Documents/PhD/segment-anything/notebooks/images/Nal047.jpg')
+image = cv2.imread('/home/matthewcockayne/Documents/PhD/data/Derm7pt/release_v0/release_v0/images/NAL/Nal036.jpg')
 
 # Convert the image to grayscale
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -31,5 +31,9 @@ for contour in contours:
 
 # Display the result
 cv2.imshow('Centre Point Detection', image)
+# Save the processed image
+cv2.imwrite('/home/matthewcockayne/Documents/PhD/Zero-shot-Segmentation-of-Derm7pt-for-Evaluation-of-CAM-based-Explanation-Methods/figures/centre_point_detection3.jpg', image)
+
+# Wait for a key press and close the window
 cv2.waitKey(0)
 cv2.destroyAllWindows()
