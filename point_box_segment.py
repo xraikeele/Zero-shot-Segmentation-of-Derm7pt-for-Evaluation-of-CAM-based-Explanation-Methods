@@ -7,16 +7,87 @@ import sys
 sys.path.append("..")
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator, SamPredictor
 
-def load_and_display_image(image_path):
+def sharpen_image(image):
+    kernel = np.array([[-1, -1, -1],
+                       [-1, 9, -1],
+                       [-1, -1, -1]])
+    return cv2.filter2D(image, -1, kernel)
+
+def adjust_brightness_contrast(image, alpha, beta):
+    return cv2.addWeighted(image, alpha, image, 0, beta)
+            
+import numpy as np
+import matplotlib.pyplot as plt
+import cv2
+
+def load_and_process_image(image_path):
+    # Read the original image
     image = cv2.imread(image_path)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    
-    plt.figure(figsize=(20,20))
-    plt.imshow(image)
-    plt.axis('off')
+
+    # Convert the image to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Display the grayscale image
+    plt.imshow(gray, cmap='gray')
+    plt.title('Grayscale Image')
+    plt.show()
+    # Apply CLAHE for contrast enhancement
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    enhanced_image = clahe.apply(gray)
+    # Display the enhanced image
+    plt.imshow(enhanced_image, cmap='gray')
+    plt.title('Enhanced Image')
+    plt.show()
+    # Apply Gaussian blur for noise reduction
+    #blurred_image = cv2.GaussianBlur(enhanced_image, (5, 5), 0)
+    #plt.imshow(blurred_image, cmap='gray')
+    #plt.title('Blurred image')
+    #plt.show()
+    # Apply Canny edge detection
+    edges = cv2.Canny(enhanced_image, 30, 100)
+    plt.imshow(edges, cmap='gray')
+    plt.title('Canny Edge Detection')
+    plt.show()
+    # Apply adaptive thresholding
+    adaptive_threshold = cv2.adaptiveThreshold(enhanced_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                               cv2.THRESH_BINARY, 11, 2)
+
+    # Combine Canny edges and adaptive threshold
+    combined_image = cv2.bitwise_or(edges, adaptive_threshold)
+
+    # Display intermediate results
+    plt.imshow(combined_image, cmap='gray')
+    plt.title('Combined Image')
     plt.show()
 
-    return image
+    # Apply morphological operations to close gaps
+    kernel = np.ones((5, 5), np.uint8)
+    morph_image = cv2.morphologyEx(combined_image, cv2.MORPH_CLOSE, kernel)
+
+    # Find contours in the binary image
+    contours, _ = cv2.findContours(morph_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Iterate over all contours
+    for contour in contours:
+        # Find the contour area
+        area = cv2.contourArea(contour)
+
+        # Filter contours based on area
+        if area > 1000:  # Adjust the threshold as needed
+            # Approximate the contour to a polygon
+            epsilon = 0.02 * cv2.arcLength(contour, True)
+            approx_contour = cv2.approxPolyDP(contour, epsilon, True)
+
+            # Calculate the moments of the current contour
+            M = cv2.moments(approx_contour)
+
+            # Calculate the centre of mass
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+            else:
+                cX, cY = 0, 0
+
+    return image, cX, cY
 
 def show_anns(anns):
     if len(anns) == 0:
@@ -79,11 +150,16 @@ def show_points(coords, labels, ax, marker_size=375):
     pos_points = coords[labels==1]
     neg_points = coords[labels==0]
     ax.scatter(pos_points[:, 0], pos_points[:, 1], color='green', marker='*', s=marker_size, edgecolor='white', linewidth=1.25)
-    ax.scatter(neg_points[:, 0], neg_points[:, 1], color='red', marker='*', s=marker_size, edgecolor='white', linewidth=1.25)     
+    ax.scatter(neg_points[:, 0], neg_points[:, 1], color='red', marker='*', s=marker_size, edgecolor='white', linewidth=1.25) 
+
+def show_box(box, ax):
+    x0, y0 = box[0], box[1]
+    w, h = box[2] - box[0], box[3] - box[1]
+    ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0,0,0,0), lw=2)) 
 
 def main():
-    image_path = '/home/matthewcockayne/Documents/PhD/data/Derm7pt/release_v0/release_v0/images/A1l/Aal001.jpg'
-    image = load_and_display_image(image_path)
+    image_path = '/home/matthewcockayne/Documents/PhD/data/Derm7pt/release_v0/release_v0/images/A1l/Aal017.jpg'
+    image, cX, cY = load_and_process_image(image_path)
     print(image.shape)
 
     sam_checkpoint = "/home/matthewcockayne/Documents/PhD/Models/segment-anything/sam_vit_h_4b8939.pth"
@@ -94,14 +170,18 @@ def main():
     mask_predictor = SamPredictor(sam)
     mask_predictor.set_image(image)
     # Provide points as input prompt [X,Y]-coordinates
-    input_point = np.array([[384, 256],[250,400]])
-    input_label = np.array([1,0])
+    #input_point = np.array([[cX, cY],[(cX+100), cY],[cX, (cY+100)],[(100),(100)]])
+    input_point = np.array([[cX, cY]])
+    #input_box = np.array([x1, y1, x2, y2])
+    #input_label = np.array([1,1,1,0])
+    input_label = np.array([1])
 
 
     # Predict the segmentation mask at that point
     masks, scores, logits = mask_predictor.predict(
     point_coords=input_point,
     point_labels=input_label,
+    #box=input_box,
     multimask_output=True,
     )
     max_score = -1
@@ -113,6 +193,7 @@ def main():
         plt.imshow(image)
         show_mask(mask, plt.gca())
         show_points(input_point, input_label, plt.gca())
+        #show_box(input_box, plt.gca())
         plt.title(f"Mask {i+1}, Score: {score:.3f}", fontsize=18)
         plt.axis('off')
         plt.show()

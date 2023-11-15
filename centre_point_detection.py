@@ -29,10 +29,19 @@ for contour in contours:
     cv2.circle(image, (cX, cY), 5, (0, 255, 0), -1)
     cv2.drawContours(image, [contour], 0, (0, 255, 0), 2)
 
+    # Define the bounding box coordinates
+    x1 = cX - 100
+    y1 = cY - 100
+    x2 = cX + 100
+    y2 = cY + 100
+
+    # Draw the bounding box on the image
+    cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
 # Display the result
-cv2.imshow('Centre Point Detection', image)
+cv2.imshow('Centre Point Detection with Bounding Box', image)
 # Save the processed image
-cv2.imwrite('/home/matthewcockayne/Documents/PhD/Zero-shot-Segmentation-of-Derm7pt-for-Evaluation-of-CAM-based-Explanation-Methods/figures/centre_point_detection3.jpg', image)
+cv2.imwrite('/home/matthewcockayne/Documents/PhD/Zero-shot-Segmentation-of-Derm7pt-for-Evaluation-of-CAM-based-Explanation-Methods/figures/centre_point_detection_with_bbox.jpg', image)
 
 # Wait for a key press and close the window
 cv2.waitKey(0)
