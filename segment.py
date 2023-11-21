@@ -22,31 +22,32 @@ import cv2
 
 def load_and_process_image(image_path):
     image = cv2.imread(image_path)
-
+    # Create a subplot with two columns
+    fig, axs = plt.subplots(4, 2, figsize=(10, 8))
     # Display original image
-    plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-    plt.title('Original Image')
-    plt.show()
+    axs[0, 0].imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    axs[0, 0].set_title('Original Image')
 
     # Adjust image brightness
     enhanced_image = adjust_brightness_contrast(image, 1.2, 30)
-    
+    axs[0, 1].imshow(cv2.cvtColor(enhanced_image, cv2.COLOR_BGR2RGB))
+    axs[0, 1].set_title('Enhanced Image')
     # Sharpen image
     sharpened_image = sharpen_image(enhanced_image)
-
+    axs[1, 0].imshow(cv2.cvtColor(sharpened_image, cv2.COLOR_BGR2RGB))
+    axs[1, 0].set_title('Sharpened Image')
     # Convert the image to grayscale
     gray = cv2.cvtColor(sharpened_image, cv2.COLOR_BGR2GRAY)
-    plt.imshow(gray, cmap='gray')
-    plt.title('Grayscale Image')
-    plt.show()
+    axs[1, 1].imshow(gray, cmap='gray')
+    axs[1, 1].set_title('Grayscale Image')
     gray_blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     # Apply Sobel operator
     img_sobel = cv2.Sobel(gray_blurred, cv2.CV_64F, 1, 0, ksize=5)
-    
+    axs[2, 0].imshow(gray_blurred, cmap='gray')
+    axs[2, 0].set_title('Blurred Image')
     # Display Sobel gradient magnitude
-    plt.imshow(np.abs(img_sobel), cmap='gray')
-    plt.title('Sobel Gradient Magnitude')
-    plt.show()
+    axs[2, 1].imshow(np.abs(img_sobel), cmap='gray')
+    axs[2, 1].set_title('Sobel Gradient Magnitude')
 
     # Convert the Sobel result to a uint8 binary image
     sobel_binary = np.uint8(np.absolute(img_sobel))
@@ -54,10 +55,13 @@ def load_and_process_image(image_path):
     threshold = cv2.adaptiveThreshold(sobel_binary, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
 
     # Display the binary image after thresholding
-    plt.imshow(threshold, cmap='gray')
-    plt.title('Binary Image after Sobel and Thresholding')
+    axs[3, 1].imshow(threshold, cmap='gray')
+    axs[3, 1].set_title('Binary Image after Sobel and Thresholding')
+    # Adjust layout to prevent overlapping
+    # Hide the empty subplot in the last row
+    #axs[3, 1].axis('off')
+    plt.tight_layout()
     plt.show()
-
     # Find contours in the binary image
     contours, _ = cv2.findContours(threshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -172,7 +176,7 @@ def show_box(box, ax):
     ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0,0,0,0), lw=2)) 
 
 def main():
-    image_path = '/home/matthewcockayne/Documents/PhD/data/Derm7pt/release_v0/release_v0/images/A1l/Aal093.jpg'
+    image_path = '/home/matthewcockayne/Documents/PhD/data/Derm7pt/release_v0/release_v0/images/A1l/Aal017.jpg'
     sharpened_image, image, cX, cY, x1, y1, x2, y2 = load_and_process_image(image_path)
     print(image.shape)
 
