@@ -82,7 +82,7 @@ def show_points(coords, labels, ax, marker_size=375):
     ax.scatter(neg_points[:, 0], neg_points[:, 1], color='red', marker='*', s=marker_size, edgecolor='white', linewidth=1.25)     
 
 def main():
-    image_path = '/home/matthewcockayne/Documents/PhD/data/Derm7pt/release_v0/release_v0/images/A1l/Aal001.jpg'
+    image_path = '/home/matthewcockayne/Documents/PhD/data/Derm7pt/release_v0/release_v0/images/A1l/Aal017.jpg'
     image = load_and_display_image(image_path)
     print(image.shape)
 
