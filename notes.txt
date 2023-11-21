@@ -1,0 +1,5 @@
+Problem lesion types:
+Aal017
+Aal061
+Aal030
+Aal093

@@ -34,7 +34,7 @@ def load_and_process_image(image_path):
 
     # Adjust image brightness
     enhanced_image = adjust_brightness_contrast(image, 1.2, 30)
-
+    
     # Sharpen image
     sharpened_image = sharpen_image(enhanced_image)
 
@@ -78,23 +78,34 @@ def load_and_process_image(image_path):
     else:
         cX, cY = 0, 0
 
-    # Define the bounding box coordinates
-    x1 = cX - 100
-    y1 = cY - 100
-    x2 = cX + 100
-    y2 = cY + 100
+    # Convert centre coordinates to integers
+    centerXCoordinate = int(centerXCoordinate)
+    centerYCoordinate = int(centerYCoordinate)
 
-    # Display the final result with the bounding box
+    # Calculate the bounding box size based on the radius
+    half_width = int(radius)
+    half_height = int(radius)
+
+    # Define the bounding box coordinates
+    x1 = cX - half_width
+    y1 = cY - half_height
+    x2 = cX + half_width
+    y2 = cY + half_height
+
+    # Display the final result with the bounding box and centre point
     result_image = image.copy()
-    cv2.drawContours(result_image, [largest_contour], 0, (0, 255, 0), 2)
-    cv2.circle(result_image, (centerXCoordinate, centerYCoordinate), radius, (255,0,0), 2)
+    cv2.circle(result_image, (centerXCoordinate, centerYCoordinate), int(radius), (255, 0, 0), 2)
     cv2.rectangle(result_image, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
+    # Plot the centre point
+    cv2.circle(result_image, (cX, cY), 5, (0, 255, 0), -1)
+
     plt.imshow(cv2.cvtColor(result_image, cv2.COLOR_BGR2RGB))
-    plt.title('Final Result with Bounding Box')
+    plt.title('Final Result with Minimum Bounding Box and Center Point')
     plt.show()
 
     return image, cX, cY, x1, y1, x2, y2
 
 # Example usage
-image_path = '/home/matthewcockayne/Documents/PhD/data/Derm7pt/release_v0/release_v0/images/A1l/Aal017.jpg'
+image_path = '/home/matthewcockayne/Documents/PhD/data/Derm7pt/release_v0/release_v0/images/A1l/Aal061.jpg'
 image, cX, cY, x1, y1, x2, y2 = load_and_process_image(image_path)
